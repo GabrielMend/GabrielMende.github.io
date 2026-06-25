@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPWS Flow-Label — GMUD</title>
+<style>
+  :root{
+    --bg:#0d1017; --panel:#151a23; --panel2:#1a212d; --border:#252d3b;
+    --txt:#e6ebf2; --muted:#8b96a8; --accent:#4f8cff;
+    --green:#34d399; --amber:#fbbf24; --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--txt); font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;
+       min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px}
+  h1{font-size:26px; font-weight:700; letter-spacing:.3px; margin-bottom:6px; text-align:center}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:34px; text-align:center}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:18px; width:100%; max-width:640px}
+  a.card{display:block; text-decoration:none; color:inherit; background:var(--panel); border:1px solid var(--border);
+         border-radius:var(--radius); padding:26px 24px; transition:.15s; position:relative}
+  a.card:hover{border-color:var(--accent); transform:translateY(-2px)}
+  a.card .tag{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px}
+  a.card .ttl{font-size:20px; font-weight:700; margin-bottom:6px}
+  a.card.pre .ttl{color:var(--amber)} a.card.pos .ttl{color:var(--green)}
+  a.card .desc{font-size:13px; color:var(--muted)}
+  a.card .lock{position:absolute; top:18px; right:18px; font-size:16px; opacity:.6}
+  footer{margin-top:34px; color:var(--muted); font-size:12px; text-align:center}
+</style>
+</head>
+<body>
+  <h1>VPWS Flow-Label</h1>
+  <div class="sub">Comparativo de auditoria — janela de mudança (GMUD)</div>
+
+  <div class="grid">
+    <a class="card pre" href="pre.html">
+      <span class="lock">🔒</span>
+      <div class="tag">Antes</div>
+      <div class="ttl">Pré-GMUD</div>
+      <div class="desc">Estado dos circuitos antes da aplicação do flow-label.</div>
+    </a>
+    <a class="card pos" href="pos.html">
+      <span class="lock">🔒</span>
+      <div class="tag">Depois</div>
+      <div class="ttl">Pós-GMUD</div>
+      <div class="desc">Estado dos circuitos após a janela de mudança.</div>
+    </a>
+  </div>
+
+  <footer>cada painel pede senha • dados cifrados no navegador</footer>
+</body>
+</html>
