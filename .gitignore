@@ -1,0 +1,7 @@
+# NUNCA comitar dados em texto puro neste repo publico
+*.json
+
+# arquivos temporarios / de teste
+_verify.html
+*.bak
+*.tmp
