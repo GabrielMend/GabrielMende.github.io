@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPWS Flow-Label — Dashboard</title>
+<style>
+  :root{
+    --bg:#0d1017; --panel:#151a23; --panel2:#1a212d; --border:#252d3b;
+    --txt:#e6ebf2; --muted:#8b96a8; --accent:#4f8cff;
+    --green:#34d399; --red:#f87171; --amber:#fbbf24;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--txt); font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif; padding:24px; min-height:100vh}
+  h1{font-size:22px; font-weight:700; letter-spacing:.3px}
+  h1 small{color:var(--muted); font-weight:400; font-size:13px; margin-left:10px}
+  .topbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px}
+  .btns{display:flex; gap:8px; flex-wrap:wrap}
+  button{background:var(--panel2); color:var(--txt); border:1px solid var(--border); border-radius:9px;
+         padding:8px 14px; cursor:pointer; font-size:13px; transition:.15s}
+  button:hover{border-color:var(--accent); color:#fff}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+  button.primary:hover{filter:brightness(1.12)}
+
+  /* dropzone */
+  #dropzone{border:2px dashed var(--border); border-radius:var(--radius); padding:48px; text-align:center;
+            color:var(--muted); margin-bottom:20px; transition:.2s; cursor:pointer}
+  #dropzone.drag{border-color:var(--accent); background:#4f8cff14; color:var(--accent)}
+  #dropzone b{color:var(--txt)}
+
+  /* cards */
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px}
+  .card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:6px}
+  .card .val{font-size:26px; font-weight:700; line-height:1.1}
+  .card .sub{font-size:12px; color:var(--muted); margin-top:4px}
+  .card.green .val{color:var(--green)} .card.red .val{color:var(--red)} .card.blue .val{color:var(--accent)} .card.amber .val{color:var(--amber)}
+
+  /* charts */
+  .charts{display:grid; grid-template-columns:280px 1fr 1fr; gap:12px; margin-bottom:20px}
+  @media(max-width:1100px){.charts{grid-template-columns:1fr}}
+  .chart{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px}
+  .chart h3{font-size:13px; color:var(--muted); font-weight:600; margin-bottom:14px; text-transform:uppercase; letter-spacing:.6px}
+  .donut-wrap{display:flex; align-items:center; gap:18px}
+  .donut{width:130px; height:130px; border-radius:50%; position:relative; flex-shrink:0}
+  .donut::after{content:""; position:absolute; inset:22px; background:var(--panel); border-radius:50%}
+  .donut .center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:1}
+  .donut .center b{font-size:22px}
+  .donut .center span{font-size:10px; color:var(--muted)}
+  .legend div{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px}
+  .dot{width:10px; height:10px; border-radius:3px; flex-shrink:0}
+  .hbar{margin:7px 0}
+  .hbar .meta{display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px}
+  .hbar .meta span:last-child{color:var(--muted)}
+  .hbar .track{height:9px; background:var(--panel2); border-radius:5px; overflow:hidden; display:flex}
+  .hbar .seg{height:100%}
+  .empty-chart{color:var(--muted); font-size:13px; padding:20px 0; text-align:center}
+
+  /* filters */
+  .filters{display:flex; gap:10px; flex-wrap:wrap; background:var(--panel); border:1px solid var(--border);
+           border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; align-items:flex-end}
+  .f{display:flex; flex-direction:column; gap:4px}
+  .f label{font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted)}
+  input[type=text], select{background:var(--panel2); border:1px solid var(--border); color:var(--txt);
+       border-radius:8px; padding:8px 10px; font-size:13px; min-width:130px; outline:none}
+  input[type=text]:focus, select:focus{border-color:var(--accent)}
+  #q{min-width:240px}
+
+  /* table */
+  .tablebox{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
+  .tablehead{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border)}
+  .tablehead .count{color:var(--muted); font-size:13px}
+  .scroll{overflow:auto; max-height:62vh}
+  table{width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap}
+  thead th{position:sticky; top:0; background:var(--panel2); color:var(--muted); font-size:11px; text-transform:uppercase;
+           letter-spacing:.6px; padding:10px 12px; text-align:left; cursor:pointer; user-select:none; z-index:2; border-bottom:1px solid var(--border)}
+  thead th:hover{color:var(--txt)}
+  thead th .arr{color:var(--accent); margin-left:4px}
+  tbody td{padding:9px 12px; border-bottom:1px solid #1d2430}
+  tbody tr:hover{background:#4f8cff0d}
+  .badge{display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700}
+  .badge.ok{background:#34d39922; color:var(--green)}
+  .badge.no{background:#f8717122; color:var(--red)}
+  .mono{font-family:Consolas,monospace; font-size:12px}
+  .desc{max-width:340px; overflow:hidden; text-overflow:ellipsis; color:var(--muted); cursor:help}
+  .plat{color:var(--accent); font-weight:600}
+  .num{text-align:right; font-family:Consolas,monospace}
+  .dim{color:var(--muted)}
+  .hot{color:var(--amber); font-weight:700}
+  footer{margin-top:14px; color:var(--muted); font-size:12px; text-align:center}
+  #fileInput{display:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>VPWS Flow-Label <small id="loadedInfo">nenhum arquivo carregado</small></h1>
+  <div class="btns">
+    <button class="primary" onclick="document.getElementById('fileInput').click()">📂 Abrir JSON</button>
+    <button onclick="loadSample()">🧪 Exemplo</button>
+    <button onclick="clearFilters()">♻ Limpar filtros</button>
+    <button onclick="exportCSV()">⬇ Exportar CSV</button>
+  </div>
+</div>
+<input type="file" id="fileInput" accept=".json,application/json">
+
+<div id="dropzone">
+  <b>Arraste o <code>vpws_flowlabel.json</code> aqui</b><br>
+  ou clique em "Abrir JSON" • os dados não saem do seu navegador
+</div>
+
+<div id="app" style="display:none">
+
+  <div class="cards" id="cards"></div>
+
+  <div class="charts">
+    <div class="chart">
+      <h3>Flow-Label</h3>
+      <div class="donut-wrap">
+        <div class="donut" id="donut"><div class="center"><b id="donutPct">—</b><span>com flow</span></div></div>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </div>
+    <div class="chart">
+      <h3>Por plataforma remota <span style="float:right;color:var(--muted);font-size:10px">verde = com flow • vermelho = sem</span></h3>
+      <div id="platChart"></div>
+    </div>
+    <div class="chart">
+      <h3>Top 10 por banda (maior entre in/out)</h3>
+      <div id="topBand"></div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="f"><label>Busca livre</label>
+      <input type="text" id="q" placeholder="host, interface, cliente, sid, ip, description..."></div>
+    <div class="f"><label>PE local</label><select id="fPe"><option value="">todos</option></select></div>
+    <div class="f"><label>Flow-Label</label>
+      <select id="fFlow"><option value="">todos</option><option value="1">com flow-label</option><option value="0">sem flow-label</option></select></div>
+    <div class="f"><label>Plataforma remota</label><select id="fPlat"><option value="">todas</option></select></div>
+    <div class="f"><label>Cliente (cli:)</label><select id="fCli"><option value="">todos</option></select></div>
+    <div class="f"><label>Faixa de banda</label>
+      <select id="fBand">
+        <option value="">todas</option>
+        <option value="0-10">&lt; 10 Mbps</option>
+        <option value="10-100">10 – 100 Mbps</option>
+        <option value="100-1000">100 Mbps – 1 Gbps</option>
+        <option value="1000-">&gt; 1 Gbps</option>
+        <option value="null">sem medição</option>
+      </select></div>
+  </div>
+
+  <div class="tablebox">
+    <div class="tablehead">
+      <span style="font-weight:600">Circuitos VPWS</span>
+      <span class="count" id="rowCount"></span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>gerado por vpws_flowlabel_audit.py • dashboard local, sem dependências externas</footer>
+</div>
+
+<script>
+"use strict";
+
+const COLS = [
+  {k:"pe",    t:"PE Local"},
+  {k:"iface", t:"Interface"},
+  {k:"flow",  t:"Flow-Label"},
+  {k:"cli",   t:"Cliente"},
+  {k:"sid",   t:"SID"},
+  {k:"inM",   t:"In (Mbps)",  num:true},
+  {k:"outM",  t:"Out (Mbps)", num:true},
+  {k:"rip",   t:"Remote PE"},
+  {k:"rplat", t:"Plataforma remota"},
+  {k:"desc",  t:"Description"},
+];
+
+let allRows = [], sortKey = "inM", sortDir = -1;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function parseDescFields(desc){
+  const o = {};
+  if (!desc) return o;
+  const m = String(desc).match(/\{([^}]*)\}/);
+  (m ? m[1] : String(desc)).split(",").forEach(p => {
+    const i = p.indexOf(":");
+    if (i > 0) o[p.slice(0,i).trim().toLowerCase()] = p.slice(i+1).trim();
+  });
+  return o;
+}
+
+function loadData(json, label){
+  allRows = [];
+  for (const [host, list] of Object.entries(json)){
+    if (!Array.isArray(list)) continue;
+    for (const e of list){
+      const df = parseDescFields(e.description);
+      const paren = String(e.remote_pe || "").match(/\(([^)]*)\)\s*$/);
+      const inside = paren ? paren[1] : "";
+      const rname = inside.includes(" - ") ? inside.split(" - ").slice(1).join(" - ").trim() : "";
+      allRows.push({
+        pe: host,
+        iface: e.interface || "",
+        vpws: e.vpws_name || "",
+        flow: e.flow_label === true,
+        desc: e.description || "",
+        cli: df.cli || "", sid: df.sid || "", mcid: df.mcid || "", ecid: df.ecid || "",
+        inM:  typeof e.input_mbps  === "number" ? e.input_mbps  : null,
+        outM: typeof e.output_mbps === "number" ? e.output_mbps : null,
+        rip: e.remote_pe_ip || "",
+        rplat: e.remote_pe_platform || "unknown",
+        rname: rname,
+      });
+    }
+  }
+  $("loadedInfo").textContent = `${label} • ${allRows.length} VPWS em ${new Set(allRows.map(r=>r.pe)).size} PEs`;
+  $("dropzone").style.display = "none";
+  $("app").style.display = "block";
+  populateFilters();
+  apply();
+}
+
+function populateFilters(){
+  const fill = (id, vals) => {
+    const sel = $(id), cur = sel.value;
+    sel.innerHTML = sel.options[0].outerHTML;
+    [...new Set(vals)].filter(Boolean).sort().forEach(v => {
+      const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+    sel.value = cur;
+  };
+  fill("fPe",   allRows.map(r => r.pe));
+  fill("fPlat", allRows.map(r => r.rplat));
+  fill("fCli",  allRows.map(r => r.cli));
+}
+
+const maxBand = r => Math.max(r.inM ?? -1, r.outM ?? -1);
+
+function getFiltered(){
+  const q = $("q").value.trim().toLowerCase();
+  const fPe = $("fPe").value, fPlat = $("fPlat").value, fCli = $("fCli").value;
+  const fFlow = $("fFlow").value, fBand = $("fBand").value;
+  return allRows.filter(r => {
+    if (fPe && r.pe !== fPe) return false;
+    if (fPlat && r.rplat !== fPlat) return false;
+    if (fCli && r.cli !== fCli) return false;
+    if (fFlow === "1" && !r.flow) return false;
+    if (fFlow === "0" && r.flow) return false;
+    if (fBand){
+      const b = maxBand(r);
+      if (fBand === "null"){ if (b >= 0) return false; }
+      else {
+        if (b < 0) return false;
+        const [lo, hi] = fBand.split("-");
+        if (b < +lo) return false;
+        if (hi !== "" && b >= +hi) return false;
+      }
+    }
+    if (q){
+      const blob = `${r.pe} ${r.iface} ${r.vpws} ${r.cli} ${r.sid} ${r.mcid} ${r.ecid} ${r.rip} ${r.rplat} ${r.rname} ${r.desc}`.toLowerCase();
+      if (!q.split(/\s+/).every(t => blob.includes(t))) return false;
+    }
+    return true;
+  });
+}
+
+const fmtM = v => v == null ? "—" : (v >= 1000 ? (v/1000).toFixed(2) + " G" : v.toFixed(2));
+const fmtTot = v => v >= 1000 ? (v/1000).toFixed(2) + " Gbps" : v.toFixed(1) + " Mbps";
+
+function apply(){
+  const rows = getFiltered();
+  renderCards(rows); renderDonut(rows); renderPlat(rows); renderTop(rows); renderTable(rows);
+}
+
+function renderCards(rows){
+  const tot = rows.length, fl = rows.filter(r => r.flow).length;
+  const pes = new Set(rows.map(r => r.pe)).size;
+  const sumIn = rows.reduce((a,r) => a + (r.inM || 0), 0);
+  const sumOut = rows.reduce((a,r) => a + (r.outM || 0), 0);
+  const pct = tot ? (100*fl/tot).toFixed(1) : "0";
+  $("cards").innerHTML = `
+    <div class="card blue"><div class="lbl">VPWS (filtro)</div><div class="val">${tot}</div><div class="sub">de ${allRows.length} no total</div></div>
+    <div class="card green"><div class="lbl">Com flow-label</div><div class="val">${fl}</div><div class="sub">${pct}% do filtro</div></div>
+    <div class="card red"><div class="lbl">Sem flow-label</div><div class="val">${tot-fl}</div><div class="sub">${tot ? (100-(+pct)).toFixed(1) : 0}% do filtro</div></div>
+    <div class="card"><div class="lbl">PEs locais</div><div class="val">${pes}</div><div class="sub">${new Set(rows.map(r=>r.rplat)).size} plataformas remotas</div></div>
+    <div class="card amber"><div class="lbl">Tráfego In</div><div class="val">${fmtTot(sumIn)}</div><div class="sub">soma das taxas (300s)</div></div>
+    <div class="card amber"><div class="lbl">Tráfego Out</div><div class="val">${fmtTot(sumOut)}</div><div class="sub">soma das taxas (300s)</div></div>`;
+}
+
+function renderDonut(rows){
+  const tot = rows.length, fl = rows.filter(r => r.flow).length;
+  const pct = tot ? 100*fl/tot : 0;
+  $("donut").style.background = `conic-gradient(var(--green) 0 ${pct}%, var(--red) ${pct}% 100%)`;
+  $("donutPct").textContent = tot ? pct.toFixed(1) + "%" : "—";
+  $("donutLegend").innerHTML = `
+    <div><span class="dot" style="background:var(--green)"></span> ${fl} com flow-label</div>
+    <div><span class="dot" style="background:var(--red)"></span> ${tot-fl} sem flow-label</div>
+    <div class="dim" style="font-size:12px">${tot} circuitos no filtro</div>`;
+}
+
+function renderPlat(rows){
+  const by = {};
+  rows.forEach(r => { (by[r.rplat] = by[r.rplat] || {f:0, n:0})[r.flow ? "f" : "n"]++; });
+  const items = Object.entries(by).sort((a,b) => (b[1].f+b[1].n)-(a[1].f+a[1].n)).slice(0,12);
+  if (!items.length){ $("platChart").innerHTML = '<div class="empty-chart">sem dados</div>'; return; }
+  const max = items[0][1].f + items[0][1].n;
+  $("platChart").innerHTML = items.map(([p, c]) => {
+    const t = c.f + c.n, w = 100*t/max;
+    return `<div class="hbar">
+      <div class="meta"><span>${esc(p)}</span><span>${c.f}✓ / ${c.n}✗ — ${t}</span></div>
+      <div class="track" style="width:${w}%">
+        <div class="seg" style="background:var(--green);width:${t ? 100*c.f/t : 0}%"></div>
+        <div class="seg" style="background:var(--red);width:${t ? 100*c.n/t : 0}%"></div>
+      </div></div>`;
+  }).join("");
+}
+
+function renderTop(rows){
+  const top = rows.filter(r => maxBand(r) >= 0).sort((a,b) => maxBand(b)-maxBand(a)).slice(0,10);
+  if (!top.length){ $("topBand").innerHTML = '<div class="empty-chart">sem medições de banda</div>'; return; }
+  const max = maxBand(top[0]) || 1;
+  $("topBand").innerHTML = top.map(r => `<div class="hbar">
+      <div class="meta"><span>${esc(r.pe)} · ${esc(r.iface)}${r.cli ? " · " + esc(r.cli) : ""}</span>
+        <span>${fmtTot(maxBand(r))}</span></div>
+      <div class="track"><div class="seg" style="background:${r.flow ? "var(--green)" : "var(--red)"};width:${100*maxBand(r)/max}%"></div></div>
+    </div>`).join("");
+}
+
+function renderTable(rows){
+  const sorted = [...rows].sort((a,b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === "boolean"){ va = +va; vb = +vb; }
+    if (typeof va === "number") return (va - vb) * sortDir;
+    return String(va).localeCompare(String(vb)) * sortDir;
+  });
+  $("thead").innerHTML = COLS.map(c =>
+    `<th onclick="setSort('${c.k}')">${c.t}${sortKey === c.k ? `<span class="arr">${sortDir > 0 ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+  const LIMIT = 2000;
+  $("tbody").innerHTML = sorted.slice(0, LIMIT).map(r => `<tr>
+      <td>${esc(r.pe)}</td>
+      <td class="mono">${esc(r.iface)}</td>
+      <td>${r.flow ? '<span class="badge ok">✓ SIM</span>' : '<span class="badge no">✗ NÃO</span>'}</td>
+      <td>${esc(r.cli) || '<span class="dim">—</span>'}</td>
+      <td class="mono">${esc(r.sid) || '<span class="dim">—</span>'}</td>
+      <td class="num ${ (r.inM||0) >= 1000 ? "hot" : ""}">${fmtM(r.inM)}</td>
+      <td class="num ${ (r.outM||0) >= 1000 ? "hot" : ""}">${fmtM(r.outM)}</td>
+      <td class="mono">${esc(r.rip)}${r.rname ? `<span class="dim"> ${esc(r.rname)}</span>` : ""}</td>
+      <td class="plat">${esc(r.rplat)}</td>
+      <td class="desc" title="${esc(r.desc)}">${esc(r.desc) || '<span class="dim">—</span>'}</td>
+    </tr>`).join("");
+  $("rowCount").textContent = sorted.length > LIMIT
+    ? `mostrando ${LIMIT} de ${sorted.length} circuitos (refine o filtro)` : `${sorted.length} circuitos`;
+}
+
+function setSort(k){
+  if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = COLS.find(c => c.k === k)?.num ? -1 : 1; }
+  apply();
+}
+
+function clearFilters(){
+  ["q"].forEach(id => $(id).value = "");
+  ["fPe","fFlow","fPlat","fCli","fBand"].forEach(id => $(id).value = "");
+  apply();
+}
+
+function exportCSV(){
+  const rows = getFiltered();
+  const head = ["pe_local","interface","flow_label","cliente","sid","mcid","ecid","input_mbps","output_mbps","remote_pe_ip","remote_pe_nome","remote_pe_plataforma","vpws_name","description"];
+  const lines = [head.join(";")].concat(rows.map(r =>
+    [r.pe, r.iface, r.flow ? "SIM" : "NAO", r.cli, r.sid, r.mcid, r.ecid,
+     r.inM ?? "", r.outM ?? "", r.rip, r.rname, r.rplat, r.vpws, `"${String(r.desc).replace(/"/g,'""')}"`].join(";")));
+  const blob = new Blob(["﻿" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vpws_flowlabel_filtrado.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ---------------- carga de arquivo ----------------
+function readFile(file){
+  const fr = new FileReader();
+  fr.onload = () => {
+    try { loadData(JSON.parse(fr.result), file.name); }
+    catch(e){ alert("JSON inválido: " + e.message); }
+  };
+  fr.readAsText(file);
+}
+$("fileInput").addEventListener("change", e => e.target.files[0] && readFile(e.target.files[0]));
+const dz = $("dropzone");
+dz.addEventListener("click", () => $("fileInput").click());
+["dragover","dragenter"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === "drop" && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); dz.classList.remove("drag"); }));
+["q"].forEach(id => $(id).addEventListener("input", apply));
+["fPe","fFlow","fPlat","fCli","fBand"].forEach(id => $(id).addEventListener("change", apply));
+
+// ---------------- exemplo ----------------
+function loadSample(){
+  loadData({
+    "BRE-EQUINIX-SP4-HUAWEI-X4-P01":[
+      {"interface":"Eth-Trunk5.14","flow_label":true,"description":"{t:cli,srv:l2vpn,cli:sempre,a:bhe,b:bhe,mcid:15732,ecid:a-93558-013,sid:l2l6820,eos:2025036009}","input_mbps":271.85,"output_mbps":43.78,"vpws_name":"l2l6820","remote_pe":"172.23.240.130 (ACX7100-32C - BR-XX-ACX-01)","remote_pe_ip":"172.23.240.130","remote_pe_platform":"ACX7100-32C"},
+      {"interface":"Eth-Trunk5.22","flow_label":false,"description":"{t:cli,srv:l2vpn,cli:megalink,a:sp4,b:cta,mcid:11200,ecid:a-91022-001,sid:l2l5511,eos:2025020101}","input_mbps":1850.4,"output_mbps":1320.9,"vpws_name":"l2l5511","remote_pe":"172.21.0.128 (HuaweiNetEngine8000 - BR-PR-CTA-S628)","remote_pe_ip":"172.21.0.128","remote_pe_platform":"HuaweiNetEngine8000"},
+      {"interface":"100GE0/1/3.100","flow_label":true,"description":"{t:cli,srv:l2vpn,cli:fibernetx,a:sp4,b:gna,mcid:18044,ecid:a-99001-002,sid:l2l7001,eos:2026010122}","input_mbps":12.4,"output_mbps":88.1,"vpws_name":"l2l7001","remote_pe":"198.18.1.126 (PTX10001-36MR - BR-GO-GNA)","remote_pe_ip":"198.18.1.126","remote_pe_platform":"PTX10001-36MR"}],
+    "BR-PR-CTA-S628-R108-ED-RT-5968":[
+      {"interface":"Eth-Trunk2.301","flow_label":false,"description":"{t:cli,srv:l2vpn,cli:turbonet,a:cta,b:lapa,mcid:13377,ecid:a-95555-021,sid:l2l6001,eos:2025110505}","input_mbps":null,"output_mbps":null,"vpws_name":"l2l6001","remote_pe":"172.23.240.128 (HuaweiNetEngine8000 - br-spo-lapa)","remote_pe_ip":"172.23.240.128","remote_pe_platform":"HuaweiNetEngine8000"},
+      {"interface":"GigabitEthernet0/2/7.55","flow_label":true,"description":"{t:cli,srv:l2vpn,cli:sempre,a:cta,b:soo,mcid:15733,ecid:a-93558-014,sid:l2l6821,eos:2025036010}","input_mbps":420.55,"output_mbps":510.02,"vpws_name":"l2l6821","remote_pe":"186.211.109.225 (ACX7100-32C - BR-SC-SOO-S11)","remote_pe_ip":"186.211.109.225","remote_pe_platform":"ACX7100-32C"}]
+  }, "exemplo embutido");
+}
+</script>
+</body>
+</html>
